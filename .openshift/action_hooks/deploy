@@ -1,0 +1,56 @@
+#!/bin/env node
+//  For ghost
+const os	= require('os');
+const fs	= require('fs');
+const url	= require('url');
+const sys	= require('sys');
+const path	= require('path');
+const async	= require('async');
+
+const names = [ 'apps', 'data', 'images', 'themes' ];
+const casper = 'wget https://github.com/TryGhost/Casper/archive/1.2.3.zip -P %s -O casper.zip ;unzip %s/casper.zip -d %s';
+
+async.waterfall([
+	function (callback) {
+		async.map(names, function (name, next) {
+			var name = path.join(process.env.OPENSHIFT_DATA_DIR, name);
+			fs.exsist(name, function (exist) {
+				next({
+					is : exist,
+					name : name
+				});
+			});
+		}, callback);
+	},
+	function (list, callback) {
+		async.map(list, function (obj, next) {
+			if(obj.is)
+				return next();
+			var name = path.join(process.env.OPENSHIFT_DATA_DIR, obj.name);
+			fs.mkdir(name, next);
+		}, callback);
+    },
+    function (trash, callback) {
+    	var name = path.join(process.env.OPENSHIFT_REPO_DIR, 'themes');
+    	fs.exsist(name, function (exist) {
+			if(!exist)
+				return callback(null, true);
+
+			fs.link(name, path.join(process.env.OPENSHIFT_DATA_DIR, 'themes'), callback);
+		});
+    },
+    function (is, callback) {
+    	if(!is)
+    		return callback();
+    	var runs =utils.format(casper,
+    		process.env.OPENSHIFT_TMP_DIR, process.env.OPENSHIFT_TMP_DIR,
+    		path.join(process.env.OPENSHIFT_DATA_DIR, obj.name));
+    	bal.bla(runs,  function (err) {
+    		callback(err);
+    	});
+    }
+], function (err) {
+	if(err)
+		throw err;
+	process.exit();
+});
